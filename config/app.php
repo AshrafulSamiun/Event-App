@@ -164,6 +164,7 @@ return [
         Illuminate\Validation\ValidationServiceProvider::class,
         Illuminate\View\ViewServiceProvider::class,
          'Collective\Html\HtmlServiceProvider',
+         Maatwebsite\Excel\ExcelServiceProvider::class,
 
         /*
          * Package Service Providers...
@@ -234,6 +235,7 @@ return [
         'Html' => 'Collective\Html\HtmlFacade',
         'Image' => Intervention\Image\Facades\Image::class,
         'Charts' => ConsoleTVs\Charts\Facades\Charts::class,
+        'Excel' => Maatwebsite\Excel\Facades\Excel::class,
         
 
     ],

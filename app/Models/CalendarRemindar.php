@@ -12,6 +12,7 @@ class CalendarRemindar extends Model
             'reminder_no',
             'reminder_period', 
             'time', 
+            'reminder_date', 
             'email',
             'description',
             'inserted_by', 

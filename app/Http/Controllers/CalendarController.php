@@ -7,6 +7,8 @@ use App\Classes\ArrayFunction as ArrayFunction;
 use Illuminate\Support\Facades\DB;
 use App\Models\CalendarEvent;
 use App\Models\CalendarRemindar;
+use App\Imports\EventsImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class CalendarController extends Controller
 {
@@ -52,6 +54,17 @@ class CalendarController extends Controller
         //
     }
 
+    public function importFromCSV(Request $request)
+    {
+        $request->validate([
+            'csv_file' => 'required|mimes:csv,txt'
+        ]);
+
+        Excel::import(new EventsImport, $request->file('csv_file'));
+
+        return response()->json(['message' => 'Events imported successfully'], 200);
+    }
+
     public function CalendarLists(Request $request,$year)
     {
         
@@ -70,6 +83,7 @@ class CalendarController extends Controller
         {
             $reminder_details_arr[$i]['reminder_no']    =$i+1;
             $reminder_details_arr[$i]['reminder_period']="";
+            $reminder_details_arr[$i]['deminder_date']  ="";
             $reminder_details_arr[$i]['time']           ="";
             $reminder_details_arr[$i]['email']          ="";
             $reminder_details_arr[$i]['description']    ="";
@@ -185,12 +199,20 @@ class CalendarController extends Controller
                 {
                     $remidnar_time                      =date("H:i:s",strtotime($details['time']));
                     $details['time']                    =$remidnar_time;
-                }              
+                } 
+                
+                if($details['reminder_date'])
+                {
+                    $reminder_date                      =date("Y-m-d",strtotime($details['reminder_date']));
+                    $details['reminder_date']           =$reminder_date;
+                }
+
                 $data_deminder_details[]= array(
                     'mst_id'                    =>$calendar_info->id,
                     'reminder_no'               =>$details['reminder_no'],
                     'email'                     =>$details['email'],
                     'time'                      =>$details['time'],
+                    'reminder_date'             =>$details['reminder_date'],
                     'description'               =>$details['description'],
                     'reminder_period'           =>$details['reminder_period'],
                     'inserted_by'               =>$user_id,
@@ -285,6 +307,7 @@ class CalendarController extends Controller
             $reminder_details_arr[$i]['email']          ="";
             $reminder_details_arr[$i]['description']    ="";
             $reminder_details_arr[$i]['id']             ="";
+            $reminder_details_arr[$i]['deminder_date']  ="";
         }
 
         $reminder_data                                  =CalendarRemindar::where('status_active',1)
@@ -302,9 +325,11 @@ class CalendarController extends Controller
             $reminder_details_arr[$i]['reminder_no']    =$value->reminder_no;
             $reminder_details_arr[$i]['reminder_period']=$value->reminder_period;
             $reminder_details_arr[$i]['time']           =$value->time;
+            $reminder_details_arr[$i]['reminder_date']  =$value->reminder_date;
             $reminder_details_arr[$i]['email']          =$value->email;;
             $reminder_details_arr[$i]['description']    =$value->description;;
-            $reminder_details_arr[$i]['id']             =$value->id;;
+            $reminder_details_arr[$i]['id']             =$value->id;
+            $reminder_details_arr[$i]['deminder_date']  =$value->deminder_date;
         }
 
         $data['reminder_details_arr']       =$reminder_details_arr;
@@ -401,6 +426,12 @@ class CalendarController extends Controller
                     $details['time']                    =$remidnar_time;
                 }
 
+                if($details['reminder_date'])
+                {
+                    $reminder_date                      =date("Y-m-d",strtotime($details['reminder_date']));
+                    $details['reminder_date']           =$reminder_date;
+                }
+
                 if($details['id']>0)
                 {
                     $details_data_update= array(
@@ -408,6 +439,7 @@ class CalendarController extends Controller
                         'reminder_no'               =>$details['reminder_no'],
                         'email'                     =>$details['email'],
                         'time'                      =>$details['time'],
+                        'reminder_date'             =>$details['reminder_date'],
                         'description'               =>$details['description'],
                         'reminder_period'           =>$details['reminder_period'],
                         'updated_by'                =>$user_id,

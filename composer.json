@@ -16,6 +16,7 @@
         "laravel/tinker": "^2.8",
         "laravel/ui": "^4.0",
         "laravelcollective/html": "^6.0",
+        "maatwebsite/excel": "^3.1",
         "mews/captcha": "^3.2",
         "nesbot/carbon": "^2.0",
         "nyholm/psr7": "^1.8",

@@ -2,6 +2,32 @@
 
 Route::resource('Calendars','CalendarController');
 Route::get('CalendarList/{year}','CalendarController@CalendarLists');
+Route::post('/events/import', 'CalendarController@importFromCSV');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //========================Test Link===================================
 use App\Mail\WelcomeMail;
 use Illuminate\Support\Facades\Mail;
@@ -41,8 +67,6 @@ Route::group(['middleware' => ['auth', 'twofactor']], function () {
 
 	
 	Route::resource('Users','UserController');
-	Route::get('UserTypeData/{user_type}','UserController@UserTypeData');	
-	Route::resource('PropertyProjects','PropertyProjectController');
 	
 
 });

@@ -6,10 +6,14 @@
             <button v-show="!form_showable" class="btn  btn-outline-primary p-2" @click.prevent="new_event()">
                 <span style="font-size: 22px;">+ Create New</span>
             </button>
-            <button v-show="form_showable" class="btn  btn-outline-primary p-2" @click.prevent="event_calender()">
+            <button v-show="!calendar_showable" class="btn  btn-outline-primary p-2  ml-3" @click.prevent="event_calender()">
                 <span style="font-size: 22px;">Event Calender</span>
             </button>
-        
+
+            <button  class="btn  btn-outline-primary p-2 ml-3" @click.prevent="import_csv()">
+                <span style="font-size: 22px;">Import CSV</span>
+            </button> 
+            
         
         </div> 
         <div class="form-card" style="margin-bottom:30px" v-show="calendar_showable">
@@ -59,9 +63,27 @@
                 </div>
             </div>           
         </div>
-           
+        <div  class="form-card" v-if="event_import">
+            <div class="form-folder">
+                <div class="form-holder">
+                    <div class="row align-self-stretch">
+                        <div class="col-md-6 col-sm-12 col-xs-12">
 
-        <form  id="msform" @submit.prevent="editmode ? updateCalenderEvent() : createCalendarEvent()" @keydown="form.onKeydown($event)">
+                            <h2>Import Events from CSV</h2>
+                            <form @submit.prevent="uploadCSV">
+                            <div class="form-group">
+                                <label for="csvFile">Select CSV File:</label>
+                                <input type="file" id="csvFile" @change="handleFileUpload" class="form-control" accept=".csv" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary mt-3" >Upload</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>  
+            </div>  
+        </div>
+
+        <form v-show="form_showable" id="msform" @submit.prevent="editmode ? updateCalenderEvent() : createCalendarEvent()" @keydown="form.onKeydown($event)">
             <div class="form-card" style="margin-top:30px">
                 <div class="form-folder">
                     <div class="form-holder">
@@ -364,7 +386,8 @@
                                     <td scope="row">Reminder-{{reminder.reminder_no}}</td>
                                     <td>
                                         <select v-model="reminder.reminder_period"
-                                            name="job_site_id"
+                                            name="reminder_period"
+                                            @change="change_reminder_periond(reminder)"
                                             class="custom-select">
                                             <option disabled value="">--Select -- </option>
                                              <option v-for="(re_date,index) in reminder_arr" :value="index">{{re_date}}</option>
@@ -377,7 +400,7 @@
                                     <td>
                                         <input v-model="reminder.email" 
                                             type="text" 
-                                            name="subject" 
+                                            name="email" 
                                             placeholder="Type Email" 
                                             :class="{ 'is-invalid': form.errors.has('email') }"/>
                                     </td>
@@ -405,20 +428,20 @@
                     @click="reset_form()">Reset </button>
               
                 <button 
-                    :disabled="form.busy || editmode==true || form.posting_status!=0"  
+                    :disabled="form.busy || editmode==true"  
                     type="button" 
                     class="btn  btn-primary mx-2" 
                     style="min-width:110px"  
-                    @click="save_stay(1)">Save</button>
+                    @click="save_stay()">Save</button>
                
                 <button     
-                    :disabled="form.busy || editmode==false || form.posting_status!=0" 
+                    :disabled="form.busy || editmode==false" 
                     type="submit" 
                     class="btn  btn-primary mx-2" 
                     style="min-width:110px" >Update</button>
 
                 <button 
-                    :disabled="form.busy || editmode==false || form.posting_status!=0" 
+                    :disabled="form.busy || editmode==false" 
                     type="button"   
                     class="btn  btn-primary mx-2" 
                     style="min-width:110px"  
@@ -445,6 +468,7 @@
             return {
                 editmode:false,
                 list_showable:false,
+                event_import:false,
                 filter: '',
                 form:new Form({                    
                     system_no:'',
@@ -474,10 +498,7 @@
                     occerance_number:'',
                     end_on:'',
                     end_date:'',
-                    id:'',
-                    posting_status:0,
-                    page_id:20,
-                    
+                    id:'',                    
                     reminder_details_arr:[],
                     current_year: new Date().getFullYear(),
                 }),
@@ -506,15 +527,58 @@
               user_type:0,
               form_showable:false,
               calendar_showable:true,
+              csvFile: null,
               
             };
         },
         created: function()
         {
             this.user_menu_name = this.$route.name;
+            this.syncOfflineEvents();
             this.fetchCalendar();
         },
         methods: {
+
+            handleFileUpload(event) {
+                this.csvFile = event.target.files[0];
+            },
+            async uploadCSV() {
+                if (!this.csvFile) {
+                    alert('Please select a CSV file.');
+                    return;
+                }
+
+
+                const formData = new FormData();
+                formData.append('csv_file', this.csvFile);
+
+                try {
+                    await axios.post('/events/import', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                    });
+                    alert('CSV Imported Successfully!');
+
+                }catch (error) {
+                    console.error('CSV Import Error:', error);
+                    alert('Error importing CSV. Please check the file format.');
+                } 
+                this.fetchCalendar();
+
+            },
+            import_csv(){
+                this.event_import=true;
+                this.form_showable=false;
+                this.calendar_showable=false;
+            },
+            change_reminder_periond(reminder){
+
+                let days=parseInt(reminder.reminder_period);
+                const result = new Date(this.form.event_date);  
+                result.setDate(result.getDate() - days);
+                reminder.reminder_date=result;
+            },
             event_calender(){
                 this.form_showable=false;
                 this.calendar_showable=true;
@@ -525,11 +589,7 @@
                 this.form_showable=true;
                 this.calendar_showable=false;
             },
-            change_jobsite()
-            {
-                this.form.company_id=this.job_site_list[this.form.job_site_id].company_id;
-                this.form.company_type=this.job_site_list[this.form.job_site_id].company_type;
-            },
+           
             fetchCalendar()
             {
                 let uri = '/CalendarList/'+this.form.current_year;
@@ -811,9 +871,7 @@
                 }); 
                 this.form_showable=true;
                 this.calendar_showable=false;
-                this.$nextTick(() => {
-                    this.form.message.focus();
-                });
+                
                
             },
 
@@ -906,48 +964,58 @@
             },
             save_stay(type){                
 
-                this.form.post('/Calendars') .then(({ data }) => { 
-                    var response_data=data.split("**");
-                    if(response_data[0]==1)
-                    {
-                         showToast('Data Update Successfully', 'success');
+                if (navigator.onLine){
 
-                        if(type==1)
+                    this.form.post('/Calendars') .then(({ data }) => { 
+                        var response_data=data.split("**");
+                        if(response_data[0]==1)
                         {
+                            showToast('Data Save Successfully', 'success');
                             this.editCalendar(response_data[1]);
-                            this.editmode=true;
+                            this.editmode=true; 
                         }
-                        else if(type==2)
-                        {
-                             window.location.href = '/Dashboard';
-                        }
-                        else if(type==3)
-                        {
-                            this.form.reset();
-                            this.fetchCalendar();
-                        }
-                    }
-                    else{
+                        else{
 
-                        showToast("there was some wrong","warning");
-                    }                    
-                })
+                            showToast("there was some wrong","warning");
+                        }                    
+                    });
+                }
+                else{
+                    this.saveOffline(this.form);
+                }
+                
             }, 
 
 
             saveOffline(event) {
+                
                 let offlineEvents = JSON.parse(localStorage.getItem("offlineEvents")) || [];
                 offlineEvents.push(event);
                 localStorage.setItem("offlineEvents", JSON.stringify(offlineEvents));
+                showToast('Data Save in Local Storage Successfully', 'success');
             },
             syncOfflineEvents() {
                 if (navigator.onLine) {
                     let offlineEvents = JSON.parse(localStorage.getItem("offlineEvents")) || [];
                     offlineEvents.forEach(event => {
-                        axios.post('/api/events', event).then(() => {
-                            localStorage.setItem("offlineEvents", JSON.stringify([]));
+                        console.log(event.subject );
+                        this.form.fill(event);
+                        this.form.post('/Calendars') .then(({ data }) => { 
+                            var response_data=data.split("**");
+                            if(response_data[0]==1)
+                            {
+                                showToast('Data Save from Local Storage Successfully', 'success');
+                                offlineEvents = offlineEvents.filter(offevent => offevent.subject !== event.subject)
+                                localStorage.setItem("offlineEvents",JSON.stringify(offlineEvents))
+                            }
+                            else{
+
+                                showToast("there was some wrong","warning");
+                            }                    
                         });
                     });
+
+                   
                 }
             },
             
