@@ -11,6 +11,7 @@
         "guzzlehttp/guzzle": "^7.2",
         "hisorange/browser-detect": "^4.4",
         "intervention/image": "^2.5",
+        "ladumor/laravel-pwa": "^0.0.4",
         "laravel/framework": "^10.0",
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
@@ -22,6 +23,7 @@
         "nyholm/psr7": "^1.8",
         "php-http/httplug": "^2.4",
         "php-http/message-factory": "^1.1",
+        "silviolleite/laravelpwa": "^2.0",
         "stevebauman/location": "^6.6",
         "symfony/http-client": "^6.4",
         "vonage/vonage-laravel": "^1.0"
